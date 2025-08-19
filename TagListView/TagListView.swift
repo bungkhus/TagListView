@@ -8,6 +8,26 @@
 
 import UIKit
 
+public struct TagViewModel {
+    public let title: String
+    public var textColor: UIColor?
+    public var backgroundColor: UIColor?
+    public var borderColor: UIColor?
+
+    public init(
+        title: String,
+        textColor: UIColor? = nil,
+        backgroundColor: UIColor? = nil,
+        borderColor: UIColor? = nil
+    ) {
+        self.title = title
+        self.textColor = textColor
+        self.backgroundColor = backgroundColor
+        self.borderColor = borderColor
+    }
+}
+
+
 @objc public protocol TagListViewDelegate {
     @objc optional func tagPressed(_ title: String, tagView: TagView, sender: TagListView) -> Void
     @objc optional func tagRemoveButtonPressed(_ title: String, tagView: TagView, sender: TagListView) -> Void
@@ -121,12 +141,6 @@ open class TagListView: UIView {
             rearrangeViews()
         }
     }
-
-    @IBInspectable open dynamic var minWidth: CGFloat = 0 {
-        didSet {
-            rearrangeViews()
-        }
-    }
     
     @objc public enum Alignment: Int {
         case left
@@ -220,9 +234,9 @@ open class TagListView: UIView {
     // MARK: - Interface Builder
     
     open override func prepareForInterfaceBuilder() {
-        addTag("Welcome")
-        addTag("to")
-        addTag("TagListView").isSelected = true
+        addTag(.init(title: "Welcome"))
+        addTag(.init(title: "to"))
+        addTag(.init(title: "TagListView")).isSelected = true
     }
     
     // MARK: - Layout
@@ -243,9 +257,6 @@ open class TagListView: UIView {
         
         if #available(iOS 10.0, tvOS 10.0, *) {
             isRtl = effectiveUserInterfaceLayoutDirection == .rightToLeft
-        }
-        else if #available(iOS 9.0, *) {
-            isRtl = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
         }
         else if let shared = UIApplication.value(forKey: "sharedApplication") as? UIApplication {
             isRtl = shared.userInterfaceLayoutDirection == .leftToRight
@@ -294,7 +305,6 @@ open class TagListView: UIView {
                 x: currentRowWidth,
                 y: 0)
             tagBackgroundView.frame.size = tagView.bounds.size
-            tagView.frame.size.width = max(minWidth, tagView.frame.size.width)
             tagBackgroundView.layer.shadowColor = shadowColor.cgColor
             tagBackgroundView.layer.shadowPath = UIBezierPath(roundedRect: tagBackgroundView.bounds, cornerRadius: cornerRadius).cgPath
             tagBackgroundView.layer.shadowOffset = shadowOffset
@@ -334,18 +344,18 @@ open class TagListView: UIView {
         return CGSize(width: frame.width, height: height)
     }
     
-    private func createNewTagView(_ title: String) -> TagView {
-        let tagView = TagView(title: title)
+    private func createNewTagView(_ model: TagViewModel) -> TagView {
+        let tagView = TagView(title: model.title)
         
-        tagView.textColor = textColor
+        tagView.textColor = model.textColor ?? textColor
         tagView.selectedTextColor = selectedTextColor
-        tagView.tagBackgroundColor = tagBackgroundColor
+        tagView.tagBackgroundColor = model.backgroundColor ?? tagBackgroundColor
         tagView.highlightedBackgroundColor = tagHighlightedBackgroundColor
         tagView.selectedBackgroundColor = tagSelectedBackgroundColor
         tagView.titleLineBreakMode = tagLineBreakMode
         tagView.cornerRadius = cornerRadius
-        tagView.borderWidth = borderWidth
-        tagView.borderColor = borderColor
+        tagView.borderWidth = model.borderColor != nil ? 1 : borderWidth
+        tagView.borderColor = model.borderColor ?? borderColor
         tagView.selectedBorderColor = selectedBorderColor
         tagView.paddingX = paddingX
         tagView.paddingY = paddingY
@@ -368,14 +378,14 @@ open class TagListView: UIView {
     }
 
     @discardableResult
-    open func addTag(_ title: String) -> TagView {
+    open func addTag(_ model: TagViewModel) -> TagView {
         defer { rearrangeViews() }
-        return addTagView(createNewTagView(title))
+        return addTagView(createNewTagView(model))
     }
     
     @discardableResult
-    open func addTags(_ titles: [String]) -> [TagView] {
-        return addTagViews(titles.map(createNewTagView))
+    open func addTags(_ models: [TagViewModel]) -> [TagView] {
+        return addTagViews(models.map(createNewTagView))
     }
     
     @discardableResult
@@ -398,8 +408,8 @@ open class TagListView: UIView {
     }
 
     @discardableResult
-    open func insertTag(_ title: String, at index: Int) -> TagView {
-        return insertTagView(createNewTagView(title), at: index)
+    open func insertTag(_ model: TagViewModel, at index: Int) -> TagView {
+        return insertTagView(createNewTagView(model), at: index)
     }
     
 
